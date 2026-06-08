@@ -1,0 +1,432 @@
+{
+  "env": {
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "GLM-4.5-Air",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "GLM-5.1",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "GLM-4.7",
+    "API_TIMEOUT_MS": "1200000",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8787",
+    "ANTHROPIC_AUTH_TOKEN": "__GLM_API_KEY__",
+    "BRAVE_API_KEY": "BSAWdQHpVNWcuqbpQzlp9Q_D7mwY3qu"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(ssh *)",
+      "Bash(ssh-copy-id *)",
+      "Bash(sshpass *)",
+      "Bash(scp *)",
+      "Bash(docker *)",
+      "Bash(systemctl *)",
+      "Bash(chmod *)",
+      "Bash(chown *)",
+      "Bash(gh *)",
+      "Bash(git *)",
+      "Bash(sudo apt-get *)",
+      "Bash(tmux *)",
+      "Bash(fnm *)",
+      "Bash(cat *)",
+      "Bash(grep *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(bun *)",
+      "Bash(node *)",
+      "Bash(npm *)",
+      "*",
+      "Read(//etc/**)",
+      "Bash(tmux -V)",
+      "Bash(systemctl --user status)",
+      "Bash(tmux ls:*)",
+      "Bash(systemctl --user status tmux-krokod.service)",
+      "Bash(claude --version)",
+      "Bash(fnm --version)",
+      "Bash(systemctl --user daemon-reload)",
+      "Bash(systemctl --user start tmux-krokod.service)",
+      "Bash(chmod:*)",
+      "Bash(ssh-copy-id:*)",
+      "Bash(ssh openclaw-vps:*)",
+      "Bash(sudo apt-get:*)",
+      "Bash(sshpass:*)",
+      "Bash(ssh claw-node:*)",
+      "Bash(gh auth:*)",
+      "Bash(bun --version)",
+      "mcp__plugin_discord_discord__reply",
+      "Bash(xargs cat:*)",
+      "Bash(xargs ls:*)",
+      "mcp__plugin_discord_discord__download_attachment",
+      "Bash(TOKEN=\"__DISCORD_BOT_TOKEN__\")",
+      "Bash(curl -s -H \"Authorization: Bot $TOKEN\" \"https://discord.com/api/v10/users/@me/guilds\")",
+      "Bash(GUILD=\"1479832235044769872\")",
+      "Bash(curl -s -H \"Authorization: Bot $TOKEN\" \"https://discord.com/api/v10/guilds/$GUILD/channels\")",
+      "Bash(sudo -l)",
+      "WebFetch(domain:fxtwitter.com)",
+      "WebFetch(domain:vxtwitter.com)",
+      "Bash(find *)",
+      "Bash(wc *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(diff *)",
+      "Bash(curl *)",
+      "Bash(ping *)",
+      "Bash(which *)",
+      "Bash(echo *)",
+      "Bash(pwd)",
+      "Bash(env)",
+      "Bash(export *)",
+      "Bash(source *)",
+      "Bash(python3 *)",
+      "Bash(pip3 *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(dd *)",
+      "Bash(mkfs *)",
+      "Bash(* --no-preserve-root *)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "model": "opus",
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/hooks/notify-discord-on-error.sh",
+            "timeout": 3000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/hooks/track-tool-usage.sh",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "atuin hook claude-code"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"$TOOL_INPUT\" | python3 -c \"import sys,json; data=json.load(sys.stdin); p=data.get('file_path',''); exit(0) if 'バックログ' in p else exit(1)\" && python3 /home/__USERNAME__/bin/archive-backlog-done.py",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/git/detect-commit-for-ssot.sh",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/projects/claude-config/scripts/config/post-tool-settings-sync.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "atuin hook claude-code"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/__USERNAME__/.claude/scripts/security/run-security-check.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/hooks/guard-destructive-commands.sh",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "atuin hook claude-code"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/check-cwd.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/check-version.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/load-handoff.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/load-obsidian-log.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/input/start-clipboard-watcher.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/config/check-mcp-guide-sync.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/config/load-secrets.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/config/sync-secrets-to-settings.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/obsidian/check-decision-indexes.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/git/check-submodule-sync.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash /home/__USERNAME__/projects/obsidian-ssot/00_SYSTEM/claude-config/scripts/sync-claude-md.sh --push 2>/dev/null",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/security/check-secrets-leak.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/config/check-knowledge-lint.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/git/check-claude-config-sync.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/projects/claude-config/scripts/config/sync-settings-to-example.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/obsidian/auto-update-indexes.sh",
+            "timeout": 30000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/obsidian/auto-fix-links.sh",
+            "timeout": 60000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/save-session-log.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/generate-handoff.sh",
+            "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/queue-guide-updates.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/session/sync-skills-windows.sh",
+            "timeout": 10000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/__USERNAME__/.claude/scripts/hooks/notify-done.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /home/__USERNAME__/.claude/scripts/auto-dev/next-issue.py >> /home/__USERNAME__/.claude/scripts/auto-dev/loop.log 2>&1",
+            "timeout": 10000
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/__USERNAME__/bin/claude-config-sync.sh 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  },
+  "worktree": {
+    "baseRef": "fresh"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /home/__USERNAME__/.claude/scripts/llm/llm-status.sh"
+  },
+  "enabledPlugins": {
+    "agent-sdk-dev@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "discord@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "language": "japanese",
+  "effortLevel": "medium",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "editorMode": "normal",
+  "mcpServers": {
+    "brave-search": {
+      "command": "bash",
+      "args": [
+        "/home/__USERNAME__/.claude/scripts/mcp/start-brave-search.sh"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "BSAWdQHpVNWcuqbpQzlp9Q_D7mwY3qu"
+      }
+    },
+    "minimax": {
+      "command": "bash",
+      "args": [
+        "/home/__USERNAME__/.claude/scripts/mcp/start-minimax-mcp.sh"
+      ],
+      "env": {
+        "MINIMAX_API_KEY": "__MINIMAX_API_KEY__"
+      }
+    },
+    "github": {
+      "command": "bash",
+      "args": [
+        "/home/__USERNAME__/.claude/scripts/mcp/start-github.sh"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "__GITHUB_PAT__"
+      }
+    },
+    "glm": {
+      "env": {
+        "GLM_API_KEY": "__GLM_API_KEY__"
+      }
+    }
+  },
+  "autoDream": {
+    "enabled": true,
+    "intervalHours": 24
+  }
+}

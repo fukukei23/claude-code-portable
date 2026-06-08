@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# generate-decision-indexes — 01_DECISIONS配下の_INDEX.mdを差分更新
+#
+# 既存のキュレーション（内容・参照タイミング）を保持し、
+# 新規ファイルのみ「【要更新】」マーカー付きで末尾セクションに追加する。
+#
+# 使い方:
+#   generate-decision-indexes          # 全ディレクトリを更新
+#   generate-decision-indexes nexuscore # 特定ディレクトリのみ更新
+
+set -euo pipefail
+
+DECISIONS_DIR="/home/__USERNAME__/projects/obsidian-ssot/01_DECISIONS"
+TARGET_DIRS=("$@")
+
+if [ ${#TARGET_DIRS[@]} -eq 0 ]; then
+    # 引数なし→全サブディレクトリ（_で始まるものも含む）
+    mapfile -t TARGET_DIRS < <(ls -d "$DECISIONS_DIR"/*/ 2>/dev/null | sed 's|/$||' | xargs -I{} basename {})
+fi
+
+updated=0
+new_entries=0
+
+for dir_name in "${TARGET_DIRS[@]}"; do
+    DIR="$DECISIONS_DIR/$dir_name"
+    [ -d "$DIR" ] || { echo "⚠ ディレクトリ不在: $dir_name"; continue; }
+
+    INDEX="$DIR/_INDEX.md"
+
+    # ディレクトリ内の.mdファイル一覧（_INDEX.md除く）
+    mapfile -t md_files < <(ls -1 "$DIR"/*.md 2>/dev/null | xargs -I{} basename {} | grep -v '^_INDEX.md$' || true)
+
+    if [ ${#md_files[@]} -eq 0 ]; then
+        continue
+    fi
+
+    # 既存INDEXからファイル名を抽出
+    declare -A indexed_files=()
+    if [ -f "$INDEX" ]; then
+        while IFS= read -r line; do
+            if [[ "$line" =~ \`([^\`]+)\` ]]; then
+                indexed_files["${BASH_REMATCH[1]}"]=1
+            fi
+        done < "$INDEX"
+    fi
+
+    # 新規ファイルを特定
+    declare -a new_files=()
+    for f in "${md_files[@]}"; do
+        if [ -z "${indexed_files[$f]:-}" ]; then
+            new_files+=("$f")
+        fi
+    done
+
+    if [ ${#new_files[@]} -eq 0 ]; then
+        continue
+    fi
+
+    # 新規エントリのテーブル行を生成
+    new_rows=""
+    for f in "${new_files[@]}"; do
+        # ファイルからタイトル（最初の#行）を抽出
+        title=$(grep -m1 '^#' "$DIR/$f" 2>/dev/null | sed 's/^#\+ *//' | head -c 80 || echo "（タイトル不明）")
+        new_rows+="| \`$f\` | $title 【要更新】 | — |\n"
+        new_entries=$((new_entries + 1))
+    done
+
+    # INDEXの末尾に新規セクションを追加
+    if [ -f "$INDEX" ]; then
+        # 既存ファイルの末尾が空行でなければ空行を追加
+        echo "" >> "$INDEX"
+        echo "## 新規（要キュレーション）" >> "$INDEX"
+        echo "" >> "$INDEX"
+        echo "| ファイル | 内容 | 参照タイミング |" >> "$INDEX"
+        echo "|----------|------|---------------|" >> "$INDEX"
+        echo -e "$new_rows" >> "$INDEX"
+    else
+        # INDEX未作成→最小テンプレートを生成
+        echo "# $dir_name — 判断記録索引" > "$INDEX"
+        echo "" >> "$INDEX"
+        echo "> $dir_name の開発・判断記録" >> "$INDEX"
+        echo "" >> "$INDEX"
+        echo "## 新規（要キュレーション）" >> "$INDEX"
+        echo "" >> "$INDEX"
+        echo "| ファイル | 内容 | 参照タイミング |" >> "$INDEX"
+        echo "|----------|------|---------------|" >> "$INDEX"
+        echo -e "$new_rows" >> "$INDEX"
+    fi
+
+    echo "✓ $dir_name: ${#new_files[@]}件の新規エントリを追加"
+    updated=$((updated + 1))
+
+    unset indexed_files new_files
+done
+
+echo ""
+echo "更新: ${updated}ディレクトリ / 新規エントリ: ${new_entries}件"
+
+# 新規エントリがあれば警告
+if [ "$new_entries" -gt 0 ]; then
+    echo ""
+    echo "⚠ 【要更新】マーカーのエントリがあります。内容・参照タイミングを手動で編集してください。"
+    echo "  編集後、マーカーを削除して適切なセクションに移動してください。"
+fi

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# git-standup — 全リポジトリの最近の活動を一覧
+# usage: git-standup [days]
+#        git-standup 1      # 過去1日の活動
+#        git-standup 7      # 過去1週間
+
+DAYS=${1:-1}
+SINCE=$(date -d "-${DAYS} days" +%Y-%m-%d 2>/dev/null || date -v-${DAYS}d +%Y-%m-%d)
+
+echo "📊 活動レポート（過去${DAYS}日）"
+echo "================================"
+
+for repo in $(gh repo list __USERNAME__23 --limit 50 --json name --jq '.[].name'); do
+  # コミットメッセージの1行目（タイトル）のみ取得
+  titles=$(gh api "repos/__USERNAME__23/$repo/commits?since=${SINCE}T00:00:00Z&per_page=50" \
+    --jq '.[].commit.message | split("\n")[0]' 2>/dev/null | head -20)
+
+  if [[ -n "$titles" ]]; then
+    count=$(echo "$titles" | grep -c .)
+    echo ""
+    echo "📁 $repo ($count commits)"
+    echo "$titles" | while read -r msg; do
+      echo "   - $(echo "$msg" | cut -c1-80)"
+    done
+  fi
+done
+
+echo ""
+echo "================================"

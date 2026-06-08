@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# commit-skills — GitHubの言語別コミット数・リポジトリ数を集計
+# usage: commit-skills [months]
+
+MONTHS=${1:-6}
+SINCE=$(date -d "-${MONTHS} months" +%Y-%m-%d 2>/dev/null || date -v-${MONTHS}m +%Y-%m-%d)
+
+echo "🛠️ 技術スタック集計（過去${MONTHS}ヶ月）"
+echo "================================================"
+
+declare -A LANG_BYTES
+declare -A LANG_REPOS
+TOTAL_BYTES=0
+TOTAL_COMMITS=0
+TOTAL_REPOS=0
+
+for repo in $(gh repo list __USERNAME__23 --limit 50 --json name --jq '.[].name'); do
+  # 言語別バイト数を取得
+  langs=$(gh api "repos/__USERNAME__23/$repo/languages" --jq 'to_entries[] | "\(.key) \(.value)"' 2>/dev/null)
+  if [[ -z "$langs" ]]; then
+    continue
+  fi
+
+  TOTAL_REPOS=$((TOTAL_REPOS + 1))
+
+  while IFS=' ' read -r lang bytes; do
+    LANG_BYTES["$lang"]=$(( ${LANG_BYTES["$lang"]:-0} + bytes ))
+    LANG_REPOS["$lang"]="${LANG_REPOS[$lang]} $repo"
+    TOTAL_BYTES=$((TOTAL_BYTES + bytes))
+  done <<< "$langs"
+
+  # コミット数
+  count=$(gh api "repos/__USERNAME__23/$repo/commits?since=${SINCE}T00:00:00Z&per_page=100" \
+    --jq 'length' 2>/dev/null || echo 0)
+  TOTAL_COMMITS=$((TOTAL_COMMITS + count))
+done
+
+# バイト数順にソートして表示
+for lang in $(for l in "${!LANG_BYTES[@]}"; do echo "${LANG_BYTES[$l]} $l"; done | sort -rn | cut -d' ' -f2); do
+  bytes=${LANG_BYTES[$lang]}
+  pct=$((bytes * 100 / TOTAL_BYTES))
+  repos=$(echo "${LANG_REPOS[$lang]}" | tr ' ' '\n' | sort -u | wc -l)
+  bar=$(printf '█%.0s' $(seq 1 $((pct / 3))))
+  # バイト数をKB/MBに変換
+  if [[ $bytes -gt 1048576 ]]; then
+    size="$((bytes / 1048576))MB"
+  elif [[ $bytes -gt 1024 ]]; then
+    size="$((bytes / 1024))KB"
+  else
+    size="${bytes}B"
+  fi
+  printf "  %-20s %6s (%2d%%) %2d repos  %s\n" "$lang" "$size" "$pct" "$repos" "$bar"
+done
+
+echo ""
+echo "  合計: $TOTAL_COMMITS commits / $TOTAL_REPOS repos / $TOTAL_BYTES bytes"
+echo "  期間: $SINCE 〜 $(date +%Y-%m-%d)"

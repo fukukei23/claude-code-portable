@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# daily-activity-stats — GitHub活動統計をSSOTに記録
+# usage: daily-activity-stats [YYYY-MM-DD]
+# cron: 毎日1回自動実行（Claude Code CronCreate）
+# ⚠️ WSLスクリプト — Cronからは必ず wsl bash -c "bash ~/bin/daily-activity-stats" で呼ぶこと
+
+set -euo pipefail
+
+# 引数があればその日、なければ昨日
+if [[ -n "${1:-}" ]]; then
+  TARGET="$1"
+else
+  TARGET=$(date -d "-1 day" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+fi
+
+NEXT=$(date -d "${TARGET} +1 day" +%Y-%m-%d 2>/dev/null || date -v+1d -jf "%Y-%m-%d" "${TARGET}" +%Y-%m-%d)
+MONTH="${TARGET:0:7}"  # YYYY-MM
+
+SSOT="/home/__USERNAME__/projects/obsidian-ssot"
+STATS_DIR="$SSOT/00_SYSTEM/活動統計"
+STATS_FILE="$STATS_DIR/${MONTH}.md"
+
+USER="__USERNAME__23"
+
+# GitHub API から各種カウント取得
+fetch_count() {
+  local query="$1"
+  gh api "search/issues?q=${query}&per_page=1" --jq '.total_count' 2>/dev/null || echo "0"
+}
+
+fetch_commit_count() {
+  gh api "search/commits?q=author:${USER}+author-date:${TARGET}..${NEXT}&per_page=1" --jq '.total_count' 2>/dev/null || echo "0"
+}
+
+echo "📡 ${TARGET} の活動を取得中..."
+
+COMMITS=$(fetch_commit_count)
+ISSUES_CREATED=$(fetch_count "author:${USER}+is:issue+created:${TARGET}..${NEXT}")
+ISSUES_CLOSED=$(fetch_count "author:${USER}+is:issue+closed:${TARGET}..${NEXT}")
+PRS_CREATED=$(fetch_count "author:${USER}+is:pr+created:${TARGET}..${NEXT}")
+PRS_MERGED=$(fetch_count "author:${USER}+is:pr+merged:${TARGET}..${NEXT}")
+
+# リポジトリ別コミット内訳
+REPO_STATS=""
+for repo in $(gh repo list ${USER} --limit 50 --json name --jq '.[].name' 2>/dev/null); do
+  count=$(gh api "repos/${USER}/${repo}/commits?since=${TARGET}T00:00:00Z&until=${NEXT}T00:00:00Z&per_page=1" \
+    --jq 'length' 2>/dev/null || echo "0")
+  if [[ "$count" -gt 0 ]]; then
+    actual=$(gh api "repos/${USER}/${repo}/commits?since=${TARGET}T00:00:00Z&until=${NEXT}T00:00:00Z&per_page=100" \
+      --jq 'length' 2>/dev/null || echo "$count")
+    REPO_STATS="${REPO_STATS}| ${repo} | ${actual} |
+"
+  fi
+done
+
+# ファイルがなければヘッダー作成
+if [[ ! -f "$STATS_FILE" ]]; then
+  cat > "$STATS_FILE" << HEADER
+---
+projects: [obsidian-ssot]
+unresolved: []
+---
+
+# 活動統計 ${MONTH}
+
+> GitHub活動の自動記録。毎日1回 CronCreate で更新。
+> ポートフォリオ・経歴書の定量データとして活用。
+
+## 日別サマリ
+
+| 日付 | コミット | Issue作成 | Issue完了 | PR作成 | PR merge | リポジトリ数 |
+|------|---------|----------|----------|--------|---------|------------|
+HEADER
+fi
+
+# リポジトリ数をカウント
+REPO_COUNT=$(echo -n "$REPO_STATS" | grep -c '|' || echo "0")
+ROW="| ${TARGET} | ${COMMITS} | ${ISSUES_CREATED} | ${ISSUES_CLOSED} | ${PRS_CREATED} | ${PRS_MERGED} | ${REPO_COUNT} |"
+
+# 既存エントリがあれば更新、なければサマリテーブルの区切りの直後に挿入
+# 注意: ファイル内に複数の |------ があるため「日別サマリ」セクションの区切りのみを対象にする
+if grep -q "^| ${TARGET} " "$STATS_FILE" 2>/dev/null; then
+  # 既存行を上書き（awkで行丸ごと置換）
+  awk -v target="| ${TARGET} " -v row="${ROW}" '
+    index($0, target) == 1 { print row; next }
+    { print }
+  ' "$STATS_FILE" > "${STATS_FILE}.tmp" && mv "${STATS_FILE}.tmp" "$STATS_FILE"
+  echo "✅ 更新: ${TARGET}"
+else
+  # サマリテーブルの区切り行（7列の|------...）の直後にのみ挿入
+  # マーカー: 「日別サマリ」セクション内の区切り行 = 7つの|で始まる行
+  awk -v row="${ROW}" '
+    done { print; next }
+    /^## 日別サマリ/ { in_summary=1; print; next }
+    in_summary && /^\|---/ { print; print row; done=1; next }
+    { print }
+  ' "$STATS_FILE" > "${STATS_FILE}.tmp" && mv "${STATS_FILE}.tmp" "$STATS_FILE"
+  echo "✅ 追加: ${TARGET}"
+fi
+
+# リポジトリ別内訳セクション（その日のセクションがなければ追加）
+SECTION_HEADER="## ${TARGET} リポジトリ別"
+if ! grep -q "$SECTION_HEADER" "$STATS_FILE" 2>/dev/null; then
+  cat >> "$STATS_FILE" << DETAIL
+
+${SECTION_HEADER}
+
+| リポジトリ | コミット数 |
+|-----------|----------|
+${REPO_STATS}
+DETAIL
+fi
+
+echo "📝 記録先: $STATS_FILE"
+
+# SSOT自動同期に任せるので commit/push は不要
+# （ssot-auto-sync.sh が30分間隔で自動 commit & push）

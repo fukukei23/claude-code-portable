@@ -1,0 +1,48 @@
+[2026-06-02 03:33:33] Knowledge Lint 開始
+SSOT: /home/__USERNAME__/projects/obsidian-ssot
+対象ファイル数: 1614
+閾値(60点)以上のペア数: 16
+  40_CAREER/02_実績検証/2026-06-02_経歴書更新とプロジェクト規模感整理.md -> [[2026-06-01_実測結果まとめ]] (80pt)
+  40_CAREER/02_実績検証/2026-06-01_実測結果まとめ.md -> [[2026-06-02_経歴書更新とプロジェクト規模感整理]] (80pt)
+  40_CAREER/02_実績検証/2026-06-02_経歴書更新とプロジェクト規模感整理.md -> [[2026-06-01_ポートフォリオ数値検証計画]] (80pt)
+  40_CAREER/02_実績検証/2026-06-01_ポートフォリオ数値検証計画.md -> [[2026-06-02_経歴書更新とプロジェクト規模感整理]] (80pt)
+  01_DECISIONS/claude-code/2026-05-31_record-ssot静的点検とskill-test分離.md -> [[2026-06-02_knowledge-lint-実行]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md -> [[2026-05-31_record-ssot静的点検とskill-test分離]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md -> [[2026-05-30_dev-cycleスキル登録]] (65pt)
+  01_DECISIONS/claude-code/2026-05-30_dev-cycleスキル登録.md -> [[2026-06-02_knowledge-lint-実行]] (65pt)
+  01_DECISIONS/claude-code/2026-05-30_dev-cycleスキル登録.md -> [[2026-06-02_knowledge-lintスクリプト実装と自動リンク付与]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lintスクリプト実装と自動リンク付与.md -> [[2026-05-30_dev-cycleスキル登録]] (65pt)
+  01_DECISIONS/claude-code/2026-05-31_claude-config-シークレット保護とファイル棚卸し.md -> [[2026-06-02_knowledge-lintスクリプト実装と自動リンク付与]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lintスクリプト実装と自動リンク付与.md -> [[2026-05-31_claude-config-シークレット保護とファイル棚卸し]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lintスクリプト実装と自動リンク付与.md -> [[2026-06-01_Claude-Code使用量日次集計システム]] (65pt)
+  01_DECISIONS/claude-code/2026-06-01_Claude-Code使用量日次集計システム.md -> [[2026-06-02_knowledge-lintスクリプト実装と自動リンク付与]] (65pt)
+  01_DECISIONS/claude-code/2026-05-31_引き継ぎセッション-コミットとガイド更新.md -> [[2026-06-02_knowledge-lintスクリプト実装と自動リンク付与]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md -> [[2026-06-02_knowledge-lintスクリプト実装と自動リンク付与]] (60pt)
+
+追加リンク数: 16/30
+記録: 01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md
+[2026-06-02 03:33:44] Knowledge Lint 終了 (exit=0)
+[2026-06-02 03:33:52] Knowledge Lint 開始
+SSOT: /home/__USERNAME__/projects/obsidian-ssot
+対象ファイル数: 1614
+閾値(60点)以上のペア数: 11
+  01_DECISIONS/claude-code/2026-05-31_skill-test自己点検-6件修正とgit管理移行.md -> [[2026-06-02_knowledge-lint-実行]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md -> [[2026-05-31_skill-test自己点検-6件修正とgit管理移行]] (65pt)
+  01_DECISIONS/claude-code/2026-06-01_code-metricsスキル作成と計測誤差修正.md -> [[2026-06-02_knowledge-lint-実行]] (65pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md -> [[2026-06-01_code-metricsスキル作成と計測誤差修正]] (65pt)
+
+追加リンク数: 4/30
+記録: 01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md
+[2026-06-02 03:34:02] Knowledge Lint 終了 (exit=0)
+[2026-06-02 07:51:36] Knowledge Lint 開始
+SSOT: /home/__USERNAME__/projects/obsidian-ssot
+対象ファイル数: 1615
+閾値(60点)以上のペア数: 11
+  40_CAREER/02_実績検証/2026-06-02_面接デモ準備-スクリーンショットGIF.md -> [[2026-06-01_ポートフォリオ数値一括修正]] (70pt)
+  40_CAREER/02_実績検証/2026-06-01_ポートフォリオ数値一括修正.md -> [[2026-06-02_面接デモ準備-スクリーンショットGIF]] (70pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md -> [[2026-06-02_knowledge-lintスクリプト実装と自動リンク付与]] (60pt)
+  01_DECISIONS/claude-code/2026-06-02_knowledge-lintスクリプト実装と自動リンク付与.md -> [[2026-06-02_knowledge-lint-実行]] (60pt)
+
+追加リンク数: 4/30
+記録: 01_DECISIONS/claude-code/2026-06-02_knowledge-lint-実行.md
+[2026-06-02 07:51:45] Knowledge Lint 終了 (exit=0)

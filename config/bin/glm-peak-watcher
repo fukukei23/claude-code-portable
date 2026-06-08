@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""
+GLM ピーク時間帯ウォッチャー
+日本時間15:00-19:00 (UTC+9) = UTC+8 の14:00-18:00 に3倍消費になることを通知する。
+
+使い方:
+  glm-peak-watcher          # フォアグラウンドで常駐
+  glm-peak-watcher --once   # 現在の状態だけ表示して終了
+"""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone, timedelta
+
+JST = timezone(timedelta(hours=9))
+PEAK_START = 15  # JST 15:00
+PEAK_END = 19    # JST 19:00
+CHECK_INTERVAL = 60  # 秒
+
+
+def is_peak(now_jst: datetime) -> bool:
+    return PEAK_START <= now_jst.hour < PEAK_END
+
+
+def format_time_left(now_jst: datetime) -> str:
+    if now_jst.hour < PEAK_START:
+        delta = timedelta(hours=PEAK_START, minutes=0) - timedelta(hours=now_jst.hour, minutes=now_jst.minute)
+        return f"ピーク開始まで {delta}"
+    elif now_jst.hour < PEAK_END:
+        delta = timedelta(hours=PEAK_END, minutes=0) - timedelta(hours=now_jst.hour, minutes=now_jst.minute)
+        return f"ピーク終了まで {delta}"
+    else:
+        tomorrow_peak = timedelta(hours=24 - now_jst.hour + PEAK_START, minutes=-now_jst.minute)
+        return f"次のピーク開始まで {tomorrow_peak}"
+
+
+def notify_windows(title: str, message: str) -> None:
+    """WSL2経由でWindowsトースト通知を送る。"""
+    try:
+        ps_cmd = (
+            f"Add-Type -AssemblyName System.Windows.Forms; "
+            f"[System.Windows.Forms.MessageBox]::Show('{message}', '{title}', 'OK', 'Warning')"
+        )
+        subprocess.run(
+            ["powershell.exe", "-Command", ps_cmd],
+            capture_output=True, timeout=10,
+        )
+    except Exception:
+        pass
+
+
+def notify_terminal(title: str, message: str) -> None:
+    """ターミナルにBEL文字で通知。"""
+    sys.stdout.write(f"\n\033[1;33m>>> {title}: {message} <<<\033[0m\n")
+    sys.stdout.write("\a")  # BEL
+    sys.stdout.flush()
+
+
+def show_status(now_jst: datetime) -> None:
+    peak = is_peak(now_jst)
+    time_str = now_jst.strftime("%H:%M")
+    remaining = format_time_left(now_jst)
+
+    if peak:
+        print(f"\033[1;31m[!!! 3x CONSUMPTION !!!] {time_str} JST - GLM-5.1/5-Turbo 消費3倍中 | {remaining}\033[0m")
+    else:
+        print(f"\033[0;32m[  1x normal  ] {time_str} JST - 通常倍率 | {remaining}\033[0m")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="GLM ピーク時間帯ウォッチャー")
+    parser.add_argument("--once", action="store_true", help="現在の状態だけ表示して終了")
+    args = parser.parse_args()
+
+    now_jst = datetime.now(JST)
+    show_status(now_jst)
+
+    if args.once:
+        return
+
+    was_peak = is_peak(now_jst)
+    print(f"監視中... ({CHECK_INTERVAL}秒ごとに確認, Ctrl+Cで終了)")
+
+    try:
+        while True:
+            time.sleep(CHECK_INTERVAL)
+            now_jst = datetime.now(JST)
+            current_peak = is_peak(now_jst)
+
+            # ピーク状態が変化した瞬間に通知
+            if current_peak and not was_peak:
+                notify_terminal(
+                    "ピーク時間突入",
+                    f"日本時間{now_jst.strftime('%H:%M')} - GLM-5.1/5-Turbo 消費3倍開始!"
+                )
+                notify_windows("GLM ピーク時間", "消費3倍ゾーンに入りました (15:00-19:00 JST)")
+            elif not current_peak and was_peak:
+                notify_terminal(
+                    "通常倍率に復帰",
+                    f"日本時間{now_jst.strftime('%H:%M')} - 消費1倍に戻りました"
+                )
+
+            show_status(now_jst)
+            was_peak = current_peak
+
+    except KeyboardInterrupt:
+        print("\n監視を終了しました。")
+
+
+if __name__ == "__main__":
+    main()

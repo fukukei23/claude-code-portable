@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# stale-branch-sweep — 全リポジトリの古いマージ済みブランチを一括削除
+# usage: stale-branch-sweep [--dry-run] [--days N]
+
+DRY_RUN=false
+DAYS=90
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --dry-run) DRY_RUN=true; shift ;;
+    --days) DAYS="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+
+CUTOFF=$(date -d "-${DAYS} days" +%Y-%m-%d 2>/dev/null || date -v-${DAYS}d +%Y-%m-%d)
+TOTAL=0
+DELETED=0
+
+for repo in $(gh repo list __USERNAME__23 --limit 50 --json name --jq '.[].name'); do
+  branches=$(gh api "repos/__USERNAME__23/$repo/branches" --jq '.[].name' 2>/dev/null | grep -v -E '^(main|master|develop|staging|production)$')
+  if [[ -z "$branches" ]]; then
+    continue
+  fi
+
+  for branch in $branches; do
+    TOTAL=$((TOTAL + 1))
+    # PRがマージ済みかチェック
+    pr=$(gh api "repos/__USERNAME__23/$repo/pulls?state=closed&head=__USERNAME__23:$branch" --jq '.[0].merged_at // empty' 2>/dev/null)
+    if [[ -n "$pr" ]]; then
+      pr_date=$(echo "$pr" | cut -dT -f1)
+      if [[ "$pr_date" < "$CUTOFF" || "$pr_date" == "$CUTOFF" ]]; then
+        if $DRY_RUN; then
+          echo "[DRY-RUN] $repo: $branch (merged $pr_date)"
+        else
+          gh api -X DELETE "repos/__USERNAME__23/$repo/git/refs/heads/$branch" 2>/dev/null && \
+            echo "✅ $repo: deleted $branch (merged $pr_date)" || \
+            echo "❌ $repo: failed to delete $branch"
+        fi
+        DELETED=$((DELETED + 1))
+      fi
+    fi
+  done
+done
+
+echo ""
+echo "合計: $TOTAL ブランチ確認、$DELETED 件${DRY_RUN:+(DRY-RUN) }削除対象"
+

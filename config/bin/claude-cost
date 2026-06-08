@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# claude-cost — ツール使用状況サマリーを表示
+# usage: claude-cost [YYYY-MM-DD]
+
+LOG_DIR="$HOME/.claude/logs"
+
+if [[ -n "$1" ]]; then
+  DATE="$1"
+else
+  DATE=$(date +%Y-%m-%d)
+fi
+
+LOG_FILE="$LOG_DIR/tool-usage-${DATE}.csv"
+
+if [[ ! -f "$LOG_FILE" ]]; then
+  echo "📊 ツール使用記録なし: $DATE"
+  echo "   ログファイル: $LOG_FILE が存在しません"
+  exit 0
+fi
+
+TOTAL=$(tail -n +2 "$LOG_FILE" | wc -l)
+
+echo "📊 ツール使用サマリー: $DATE"
+echo "   総呼び出し: ${TOTAL}回"
+echo ""
+
+# ツール別集計
+echo "--- ツール別 ---"
+tail -n +2 "$LOG_FILE" | cut -d',' -f3 | sort | uniq -c | sort -rn | while read count tool; do
+  pct=$((count * 100 / TOTAL))
+  bar=$(printf '█%.0s' $(seq 1 $((pct / 5))))
+  printf "  %-25s %4d回 (%2d%%) %s\n" "$tool" "$count" "$pct" "$bar"
+done
+
+echo ""
+
+# 時間別集計
+echo "--- 時間別 ---"
+tail -n +2 "$LOG_FILE" | cut -d',' -f1 | cut -d':' -f1 | sort | uniq -c | sort -t':' -k2 | while read count hour; do
+  printf "  %s時: %3d回\n" "$hour" "$count"
+done
+
+# セッション別
+SESSIONS=$(tail -n +2 "$LOG_FILE" | cut -d',' -f2 | sort -u | wc -l)
+echo ""
+echo "   セッション数: ${SESSIONS}"
+
+# コストヒューリスティック（GLM-5.1ベース）
+# GLM: 入力≈¥0.5/1K tokens, 出力≈¥2/1K tokens（概算）
+# ツール1回あたり平均: 入力500 + 出力200 = 約¥0.65
+ESTIMATED_COST=$(echo "scale=0; $TOTAL * 65 / 100" | bc)
+echo "   推定コスト(GLM): 約${ESTIMATED_COST}円（ツール1回≈¥0.65）"

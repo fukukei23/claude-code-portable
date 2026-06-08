@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# generate-daily-note — 毎日0時にデイリーノートテンプレートを生成
+# cron: 0 0 * * * /home/__USERNAME__/bin/generate-daily-note
+
+SSOT="/home/__USERNAME__/projects/obsidian-ssot"
+TODAY=$(date +%Y-%m-%d)
+DAILY="$SSOT/10_DAILY/$TODAY.md"
+
+# 既に存在する場合はスキップ
+if [[ -f "$DAILY" ]]; then
+  exit 0
+fi
+
+# テンプレート生成
+cat > "$DAILY" << EOF
+# $TODAY
+
+---
+セッション終了: --:--
+EOF
+
+# 昨日のgit活動サマリーを埋め込み
+YESTERDAY=$(date -d "-1 day" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+ACTIVITY=$(bash /home/__USERNAME__/bin/git-standup 1 2>/dev/null | head -30)
+
+if [[ -n "$ACTIVITY" ]]; then
+  echo "" >> "$DAILY"
+  echo "## 前日の活動" >> "$DAILY"
+  echo "" >> "$DAILY"
+  echo "\`\`\`" >> "$DAILY"
+  echo "$ACTIVITY" >> "$DAILY"
+  echo "\`\`\`" >> "$DAILY"
+fi
+
+echo "✅ デイリーノート生成: $DAILY"
