@@ -127,7 +127,18 @@ if [ ! -d "$HOME/projects/obsidian-ssot" ]; then
     git commit -m "Initial commit - Claude Code Portable"
     echo "✅ Obsidian Vault 初期化完了"
 else
-    echo "⚠️ obsidian-ssot は既に存在します（スキップ）"
+    echo "⚠️ obsidian-ssot は既に存在します"
+    if [ ! -f "$HOME/projects/obsidian-ssot/00_SYSTEM/README.md" ]; then
+        read -p "Vault内にREADMEがありません。ssot-templateで上書きしますか？(y/N): " OVERWRITE
+        if [ "$OVERWRITE" = "y" ] || [ "$OVERWRITE" = "Y" ]; then
+            cp -r ssot-template/* "$HOME/projects/obsidian-ssot/"
+            echo "✅ README付きテンプレートをコピーしました"
+        else
+            echo "⏭️ スキップ"
+        fi
+    else
+        echo "⏭️ README済みのためスキップ"
+    fi
 fi
 
 # 8. settings.json更新（MiniMax直結設定）

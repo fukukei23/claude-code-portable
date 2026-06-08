@@ -15,43 +15,40 @@ claude-code-portable/
 │   │   ├── scripts/     # ユーティリティスクリプト
 │   │   └── memory/      # Memory Index
 │   └── bin/             # ~/bin/ ユーティリティ
-├── ssot-template/       # 空のObsidian Vaultテンプレート
-│   ├── 00_SYSTEM/
-│   ├── 01_DECISIONS/
-│   ├── 10_DAILY/
-│   ├── 20_PUBLISHING/
-│   ├── 30_RESEARCH/
-│   ├── 40_CAREER/
-│   └── 99_ARCHIVE/
-├── create-package.sh    # パッケージ生成スクリプト（配布元用）
-├── install.sh           # セットアップスクリプト（配布先用）
-└── README.md           # このファイル
+├── ssot-template/       # Obsidian Vault 雛形（各フォルダにREADME付き）
+│   ├── 00_SYSTEM/       # 運用ルール・全体マップ・バックログ
+│   ├── 01_DECISIONS/    # 技術判断・設計決定（ADR）
+│   ├── 10_DAILY/        # 日々の作業ログ
+│   ├── 20_PUBLISHING/   # Zenn・ブログ記事ドラフト
+│   ├── 30_RESEARCH/     # 調査・研究メモ
+│   ├── 40_CAREER/       # 就職活動・キャリア関連
+│   └── 99_ARCHIVE/      # 完了・不要ファイル保管庫
+├── install.sh           # セットアップスクリプト
+└── README.md            # このファイル
 ```
 
 ## 使い方
 
-### 配布先（息子PC）での手順
+### 息子PCでの手順
 
-1. このディレクトリをUSBまたはGitHubからコピー
+1. このディレクトリをGitHubからclone
+   ```bash
+   git clone https://github.com/fukukei23/claude-code-portable.git
+   cd claude-code-portable
+   ```
 2. `bash install.sh` を実行
 3. 質問に従って入力:
    - ユーザー名（例: musuko）
    - MiniMax API KEY
-   - メールアドレス
-4. `claude` で動作確認
+   - メールアドレス（空Enterでスキップ可）
+4. `claude login` で認証（初回のみ）
+5. `claude` で起動確認
 
 ## 前提条件
 
 - WSL2 + Ubuntu
 - Claude Code CLI (`curl -fsSL https://cli.claude.ai/install.sh | bash`)
 - Git
-
-## マスクされている情報
-
-- メールアドレス → `__YOUR_EMAIL__`, `__DEST_EMAIL__`
-- ユーザー名 → `__USERNAME__`
-- APIキー → `__MINIMAX_API_KEY__`, `__GMAIL_SMTP_USER__`, `__ZAI_API_KEY__`
-- パス → `/home/__USERNAME__/`
 
 ## トラブルシューティング
 
